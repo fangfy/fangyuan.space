@@ -116,7 +116,42 @@
     }
 
     #welcome {
-      background: url('menindee_sunrise.jpeg') no-repeat center center/cover;
+      background: url('src/menindee_sunrise.jpeg') no-repeat center center/cover;
+    }
+
+    #welcome div {
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: left;
+      /* makes list easier to read */
+      background: rgba(255, 255, 255, 0.75);
+      /* optional: semi-transparent box */
+      padding: 2rem;
+      border-radius: 8px;
+    }
+
+    #welcome h1 {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      color: #072f37;
+    }
+
+    #welcome p {
+      font-size: 1.1rem;
+      color: #334f3b;
+      margin-bottom: 1rem;
+    }
+
+    #welcome ul {
+      list-style-type: disc;
+      padding-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    #welcome li {
+      margin-bottom: 0.75rem;
+      color: #334f3b;
+      line-height: 1.5;
     }
 
     #about {
@@ -129,15 +164,15 @@
 
     /* Intro text */
     .about-intro {
+      background: rgba(200, 203, 191, 0.5);
       text-align: center;
-      margin-bottom: 2rem;
       width: 100%;
-      max-width: 1000px;
+      max-width: 1100px;
     }
 
     .about-intro h2 {
       font-family: 'Merriweather', serif;
-      font-weight: 700;
+      font-weight: 750;
       color: #072f37;
       margin-bottom: 0.5rem;
     }
@@ -146,7 +181,7 @@
       font-family: 'Merriweather', serif;
       font-size: 1.1rem;
       color: #334f3b;
-      max-width: 700px;
+      max-width: 750px;
       margin: 0 auto;
     }
 
@@ -159,7 +194,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 1.5rem;
-      max-width: 1000px;
+      max-width: 1100px;
       margin: 0 auto;
     }
 
@@ -169,11 +204,14 @@
       overflow: hidden;
       border-radius: 8px;
       cursor: pointer;
+      height: 400px; /* 🔹 fixed height for consistency */
     }
 
     .gallery-item img {
       width: 100%;
-      height: auto;
+      height: 100%;              /* 🔹 force uniform size */
+      object-fit: cover;         /* 🔹 crop instead of squish */
+      object-position: center;   /* 🔹 always show the center */
       display: block;
       transition: transform 0.4s ease;
     }
@@ -187,7 +225,7 @@
       background: rgba(7, 47, 55, 0.85);
       color: #c8cbbf;
       padding: 1rem;
-      transform: translateY(100%);
+      transform: translateY(calc(100% - 3.5rem));
       transition: transform 0.3s ease;
     }
 
@@ -212,7 +250,7 @@
     }
 
     #contact {
-      background: url('namibia_sunset.jpg') no-repeat center center/cover;
+      background: url('src/namibia_sunset.jpeg') no-repeat center center/cover;
     }
 
     form {
@@ -332,8 +370,23 @@
   <main>
     <section id="welcome">
       <div>
-        <h1>Welcome</h1>
-        <p>Welcome to my page.</p>
+        <h1>Join me in turning Earth observation into real-world impact.</h1>
+
+        <p>I’m passionate about driving innovation where <span style="color:#bd7423;">technology, science, and
+            society</span> meet. My approach:</p>
+
+        <ul>
+          <li><strong>Open Science</strong> – Applying rigorous and transparent methods using the latest sensors and
+            statistical techniques. AI is a powerful tool, among many.</li>
+          <li><strong>Open Source</strong> – Sharing tools and knowledge to tackle data challenges together, at a scale
+            no single team can achieve.</li>
+          <li><strong>Co-Development</strong> – Building solutions with respect for domain expertise and local
+            experience. Adoption is as much social and cultural as technical.</li>
+          <li><strong>Community Building</strong> – Strengthening professional networks that embrace new technologies,
+            value diversity, and spark ideas.</li>
+        </ul>
+
+        <p>All with an <span style="color:#bd7423;">open mind</span>, ready to explore, learn, and create together.</p>
       </div>
     </section>
 
@@ -341,40 +394,43 @@
       <div class="about-intro">
         <h2>About Me</h2>
         <p>
-          I am a scientist.
+          I am a scientist, data scientist, and multidisciplinary team leader. My style is shaped by over 20 years of
+          professional experience, scientific curiosity, and empathy.
         </p>
       </div>
 
       <div class="about-gallery">
         <div class="gallery-item">
-          <img src="photo1.jpg" alt="Project 1">
+          <img src="src/irrigation.jpg" alt="Cross-Sector Experience">
           <div class="caption">
-            <h3>Australian Industry</h3>
-            <p>Brief description of this work or experience.</p>
+            <h3>Cross-Sector Experience</h3>
+            <p>My experience across academia, government, and industry gives me insights into the drivers, challenges,
+              and operating models of each sector. I am deeply motivated by working with people from diverse
+              backgrounds. My best ideas have come from purposeful conversations, built on personal connections and
+              trust.</p>
           </div>
         </div>
 
         <div class="gallery-item">
-          <img src="photo2.jpg" alt="Project 2">
+          <img src="src/s1.jpg" alt="Remote Sensing">
           <div class="caption">
-            <h3>Digital Earth Africa</h3>
-            <p>Brief description of this work or experience.</p>
+            <h3>Remote Sensing</h3>
+            <p>I primarily work with multispectral optical sensors due to their widespread availability, but I'm
+              constantly exploring new technologies driven by curiosity and application needs. To construct the best
+              model of Earth, we need measurements from as many perspectives as possible. The development of the first
+              analysis-ready synthetic aperture radar dataset and exploration of hyperspectral data for landscape
+              characterisation are just some examples of my work.</p>
           </div>
         </div>
 
         <div class="gallery-item">
-          <img src="photo3.jpg" alt="Project 3">
+          <img src="src/okavango.jpg" alt="Turning Data into Insights">
           <div class="caption">
-            <h3>Australia</h3>
-            <p>Brief description of this work or experience.</p>
-          </div>
-        </div>
-
-        <div class="gallery-item">
-          <img src="photo4.jpg" alt="Project 4">
-          <div class="caption">
-            <h3>Cosmic Explosions</h3>
-            <p>Brief description of this work or experience.</p>
+            <h3>Turning Data into Insights</h3>
+            <p>The value of data lies in the insights it reveals. My professional career started with surveying the sky,
+              studying powerful cosmic explosions to understand the history of the universe. Today, I analyse Earth
+              observation data to map natural resources and track environmental changes. I take a purposeful approach,
+              starting with the real question and balancing accuracy with practicality.</p>
           </div>
         </div>
       </div>
@@ -395,7 +451,7 @@
           <a href="https://www.linkedin.com/in/fangyuan0" target="_blank"
             style="display:inline-flex; align-items:center; gap:0.5rem; color:#072f37; font-weight:bold; text-decoration:none;">
             <!-- LinkedIn SVG Icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#072f37" viewBox="0 0 24 24">
+            <svg xmlns="https://www.w3.org/2000/svg" width="20" height="20" fill="#072f37" viewBox="0 0 24 24">
               <path
                 d="M20.447 20.452H16.89v-5.569c0-1.328-.027-3.041-1.852-3.041-1.853 0-2.137 1.445-2.137 2.939v5.671H9.342V9h3.41v1.561h.048c.476-.9 1.637-1.852 3.367-1.852 3.6 0 4.263 2.37 4.263 5.456v6.287zM5.337 7.433a1.984 1.984 0 01-1.982-1.982c0-1.095.888-1.982 1.982-1.982s1.982.887 1.982 1.982c0 1.094-.887 1.982-1.982 1.982zM6.884 20.452H3.79V9h3.094v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z" />
             </svg>
@@ -407,12 +463,12 @@
   </main>
 
   <footer>
-    &copy; 2025 Your Name. All rights reserved.
+    &copy; 2025 Fang Yuan. All rights reserved.
   </footer>
 
   <!-- Floating Email Icon -->
   <a href="mailto:contact@fangyuan.space" class="floating-email" aria-label="Email Me">
-    <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="#fff" viewBox="0 0 24 24">
+    <svg xmlns="https://www.w3.org/2000/svg" width="26" height="26" fill="#fff" viewBox="0 0 24 24">
       <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 
              2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 
              4l-8 5-8-5V6l8 5 8-5v2z" />
@@ -421,7 +477,7 @@
 
   <!-- Floating LinkedIn Icon -->
   <a href="https://www.linkedin.com/in/fangyuan0" target="_blank" class="floating-linkedin" aria-label="LinkedIn">
-    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="#fff" viewBox="0 0 24 24">
+    <svg xmlns="https://www.w3.org/2000/svg" width="28" height="28" fill="#fff" viewBox="0 0 24 24">
       <path d="M20.447 20.452H16.89v-5.569c0-1.328-.027-3.041-1.852-3.041-1.853 
              0-2.137 1.445-2.137 2.939v5.671H9.342V9h3.41v1.561h.048c.476-.9 
              1.637-1.852 3.367-1.852 3.6 0 4.263 2.37 
