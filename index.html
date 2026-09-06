@@ -72,7 +72,7 @@
       top: 0;
       left: 0;
       right: 0;
-      background: rgba(200, 203, 191, 0.9);
+      background: rgba(200, 203, 191, 0.85);
       border-bottom: 2px solid #c8cbbf;
       z-index: 1000;
       backdrop-filter: blur(4px);
@@ -166,27 +166,32 @@
       background: url('src/menindee_sunrise.jpeg') no-repeat center center / cover;
     }
 
-    #welcome div {
+    #welcome > div {
       max-width: 760px;
       margin: 0 auto;
       text-align: left;
-      background: rgba(255, 255, 255, 0.78);
+      background: #ffffff;
       padding: 2rem;
       border-radius: 8px;
     }
 
     #welcome h1 {
-      font-size: 1.35rem;
-      line-height: 1.5;
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      line-height: 1.3;
+      text-wrap: balance;
       margin-bottom: 1rem;
       color: #072f37;
       text-align: center;
     }
-      
+
     #welcome .hero-domain {
+      display: block;
+      margin-top: 0.8rem;
+      font-size: 0.65em;
+      line-height: 1.5;
       font-weight: 400;
     }
-    
+
     #welcome p {
       font-size: 1.1rem;
       color: #334f3b;
@@ -229,9 +234,9 @@
     }
 
     .section-intro {
-      max-width: 800px;
+      max-width: 750px;
       margin: 0 auto 2.5rem auto;
-      text-align: center;
+      text-align: left;
       font-size: 1.05rem;
     }
 
@@ -239,10 +244,12 @@
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1.5rem;
-      align-items: start;
+      align-items: stretch;
     }
 
     .service-card {
+      display: flex;
+      flex-direction: column;
       padding: 1.75rem;
       border: 1px solid #c8cbbf;
       border-radius: 8px;
@@ -257,24 +264,26 @@
     }
 
     .service-card > p {
-      margin-bottom: 1rem;
+      margin-bottom: 1.25rem;
     }
 
     .service-card details {
-      margin-top: 1.25rem;
+      margin-top: auto;
       border-top: 1px solid #c8cbbf;
       padding-top: 0.9rem;
     }
 
     .service-card summary {
-      color: #bd7423;
+      color: #072f37;
       font-weight: 700;
       cursor: pointer;
       transition: color 0.3s;
     }
 
     .service-card summary:hover {
-      color: #a55f1c;
+      color: #334f3b;
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
     }
 
     .service-card details[open] summary {
@@ -326,6 +335,7 @@
     }
 
     .about-intro p {
+      text-align: left;
       font-family: 'Merriweather', serif;
       font-size: 1.1rem;
       color: #334f3b;
@@ -353,7 +363,6 @@
       position: relative;
       overflow: hidden;
       border-radius: 8px;
-      cursor: pointer;
       height: 400px;
     }
 
@@ -371,10 +380,10 @@
       bottom: 0;
       left: 0;
       right: 0;
-      background: rgba(7, 47, 55, 0.88);
+      background: rgba(7, 47, 55, 0.85);
       color: #c8cbbf;
       padding: 1rem;
-      transform: translateY(calc(100% - 3.5rem));
+      transform: none;
       transition: transform 0.3s ease;
     }
 
@@ -397,12 +406,28 @@
       margin-bottom: 0.5rem;
       font-family: 'Merriweather', serif;
       font-weight: 700;
-      color: #bd7423;
+      color: #ffffff;
     }
 
     .gallery-item p {
       font-size: 0.9rem;
-      color: #c8cbbf;
+      color: #ffffff;
+      text-align: left;
+      max-height: 0;
+      overflow: hidden;
+      margin-bottom: 0;
+      visibility: hidden;
+    }
+
+    .gallery-item:hover p,
+    .gallery-item:focus-within p {
+      max-height: 32rem;
+      visibility: visible;
+    }
+
+    .gallery-item:focus-visible {
+      outline: 3px solid #bd7423;
+      outline-offset: 4px;
     }
 
     /* =========================
@@ -414,7 +439,48 @@
     }
 
     #contact > div {
-      max-width: 800px;
+      width: 100%;
+      max-width: 640px;
+      background: #ffffff;
+      padding: clamp(1.5rem, 4vw, 3rem);
+    }
+
+    section h2 {
+      font-size: clamp(1.6rem, 2.5vw, 2rem);
+      line-height: 1.35;
+    }
+
+    .text-link {
+      color: #072f37;
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+
+    .text-link:hover {
+      color: #334f3b;
+    }
+
+    .hero-action {
+      margin-top: 1.5rem;
+      text-align: center;
+    }
+
+    .contact-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0.75rem 1.25rem;
+      border-radius: 4px;
+      background: #072f37;
+      color: #ffffff;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .contact-button:hover {
+      background: #334f3b;
     }
 
     /* =========================
@@ -530,11 +596,16 @@
         width: 100%;
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 0.4rem 1rem;
+        gap: 0.25rem 1rem;
+        border-top: 1px solid #65816d;
+        padding-top: 0.5rem;
       }
 
       nav a {
         font-size: 0.85rem;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
       }
 
       #welcome,
@@ -550,17 +621,17 @@
 
       #welcome {
         min-height: 100vh;
-        padding-top: 8rem;
+        padding-top: 14rem;
       }
 
-      #welcome div {
+      #welcome > div {
         padding: 1.5rem;
       }
 
       #welcome h1 {
-        font-size: 1.2rem;
+        font-size: 1.65rem;
       }
-      
+
       #welcome p {
         font-size: 1rem;
       }
@@ -573,8 +644,16 @@
         padding: 1rem 0;
       }
 
+      .about-intro {
+        padding: 0 0 2rem;
+      }
+
       .gallery-item {
-        height: 360px;
+        height: auto;
+      }
+
+      .gallery-item img {
+        height: 240px;
       }
 
       /*
@@ -582,13 +661,31 @@
         so show the captions by default on small screens.
       */
       .gallery-item .caption {
+        position: static;
         transform: none;
+        background: #072f37;
+      }
+
+      .gallery-item p {
+        max-height: none;
+        visibility: visible;
       }
 
       .floating-email,
       .floating-linkedin {
         display: none;
       }
+    }
+    @media (hover: none) and (min-width: 651px) {
+      .gallery-item { height: auto; }
+      .gallery-item img { height: 240px; }
+      .gallery-item .caption { position: static; background: #072f37; }
+      .gallery-item p { max-height: none; visibility: visible; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; }
     }
   </style>
 </head>
@@ -620,21 +717,17 @@
       <div>
 
         <h1>
-          Clarity, problem-solving and intellectual partnership<br>
+          Clarity, problem-solving and intellectual partnership
           <span class="hero-domain">for Earth observation and emerging technology</span>
         </h1>
 
         <p>
-          I work at the intersection of
-          <span style="color:#bd7423;">science, technology, and societal impact</span>.
+          I help teams and organisations understand, develop and make effective use of
+          Earth observation (EO), AI and related technologies—working across strategy,
+          solution development, implementation and capability.
         </p>
 
-        <p>
-          As an independent consultant, I help teams and organisations understand,
-          develop and make effective use of Earth observation (EO), AI and related technologies.
-          I work flexibly across strategy, solution development, implementation and capability,
-          depending on where support is most useful.
-        </p>
+        <p class="hero-action"><a class="contact-button" href="#contact">Get in touch</a></p>
       </div>
     </section>
 
@@ -643,14 +736,14 @@
       <div class="section-content">
 
         <h2>What I offer</h2>
-        
+
           <p class="section-intro">
             I bring deep technology understanding, draw ideas and approaches from across disciplines,
             and apply a practical implementation lens. Expect me to <strong>ask</strong> questions,
             <strong>challenge</strong> assumptions and choices, and <strong>think deeply with you</strong>
             to find solutions that can actually be implemented.
           </p>
-        
+
         <div class="service-grid">
 
           <article class="service-card">
@@ -660,7 +753,7 @@
             <p>
               Defining the problem, assessing whether and how EO and related technologies can help,
               and identifying the choices and trade-offs. This includes aligning technology with
-              your mission and outcomes, providing independent technical reviews, and 
+              your mission and outcomes, providing independent technical reviews, and
               supporting adoption centred on user needs.
             </p>
 
@@ -820,7 +913,7 @@
           <a
             href="src/CV_Yuan_2026.pdf"
             target="_blank"
-            style="color:#bd7423; font-weight:bold; text-decoration:none;"
+            class="text-link"
           >
             my CV
           </a>.
@@ -831,7 +924,7 @@
           <a
             href="https://orcid.org/0000-0001-8315-4176"
             target="_blank"
-            style="color:#bd7423; font-weight:bold; text-decoration:none;"
+            class="text-link"
             rel="noopener noreferrer"
           >
             ORCID
@@ -843,7 +936,7 @@
 
       <div class="about-gallery">
 
-        <div class="gallery-item">
+        <div class="gallery-item" tabindex="0">
 
           <img
             src="src/irrigation.jpg"
@@ -865,7 +958,7 @@
         </div>
 
 
-        <div class="gallery-item">
+        <div class="gallery-item" tabindex="0">
 
           <img
             src="src/s1.jpg"
@@ -887,7 +980,7 @@
         </div>
 
 
-        <div class="gallery-item">
+        <div class="gallery-item" tabindex="0">
 
           <img
             src="src/okavango.jpg"
@@ -927,7 +1020,7 @@
         <p>
           <a
             href="mailto:contact@fangyuan.space"
-            style="color:#072f37; font-weight:bold; text-decoration:none;"
+            class="text-link"
           >
             contact@fangyuan.space
           </a>
@@ -938,7 +1031,8 @@
             href="https://www.linkedin.com/in/fangyuan0"
             target="_blank"
             rel="noopener noreferrer"
-            style="display:inline-flex; align-items:center; gap:0.5rem; color:#072f37; font-weight:bold; text-decoration:none;"
+            class="text-link"
+            style="display:inline-flex; align-items:center; gap:0.5rem;"
           >
 
             <svg
