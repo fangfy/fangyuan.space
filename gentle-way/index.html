@@ -15,7 +15,13 @@
   <section id="panel">
     <button id="handle" type="button" aria-label="Show or hide details"><span></span></button>
     <header>
-      <h1>Gentle Way</h1>
+      <div class="title">
+        <h1>Gentle Way</h1>
+        <div class="cities" role="group" aria-label="Jump to a city">
+          <button type="button" data-city="hobart">Hobart</button>
+          <button type="button" data-city="canberra">Canberra</button>
+        </div>
+      </div>
       <p>Walking routes that go easy on hills, steps and rough ground.</p>
     </header>
 
@@ -60,6 +66,7 @@
       <span><i class="c3"></i>10–15%</span>
       <span><i class="c4"></i>over 15%</span>
       <span><i class="c5"></i>steps</span>
+      <span><i class="cx"></i>approximate terrain</span>
     </div>
 
     <p class="note">Slopes are measured along each street from terrain data. Kerbs, crossfall and

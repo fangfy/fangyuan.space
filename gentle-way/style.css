@@ -41,6 +41,14 @@ body {
 }
 #handle { display: none; }
 
+.title { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.cities { display: flex; border: 1px solid var(--sage-grey); border-radius: 8px; overflow: hidden; flex: none; }
+.cities button {
+  font: inherit; font-size: 13px; font-weight: 600; padding: 5px 10px; cursor: pointer;
+  border: 0; background: var(--white); color: var(--forest-green);
+}
+.cities button + button { border-left: 1px solid var(--sage-grey); }
+.cities button.on { background: var(--deep-teal); color: var(--white); }
 header h1 { margin: 0; font-size: 21px; color: var(--deep-teal); letter-spacing: -0.01em; }
 header p { margin: 2px 0 12px; color: var(--forest-green); font-size: 13.5px; }
 
@@ -145,6 +153,23 @@ summary { cursor: pointer; font-weight: 600; color: var(--deep-teal); margin-bot
 .note { font-size: 12px; color: var(--muted-sage); margin: 10px 0 0; }
 .note a { color: var(--burnt-orange); }
 
+#legend .cx {
+  height: 10px; vertical-align: 0; border-radius: 2px;
+  background: repeating-linear-gradient(135deg, rgba(7, 47, 55, 0.4) 0 1.5px, rgba(101, 129, 109, 0.2) 1.5px 5px);
+}
+.approx {
+  margin: -4px 0 10px; padding: 7px 10px; border-radius: 8px;
+  background: var(--sage-wash); color: var(--forest-green); font-size: 13.5px;
+}
+.coverage-note {
+  max-width: 210px; padding: 6px 10px; border-radius: 9px;
+  background: rgba(255, 255, 255, 0.92); color: var(--forest-green);
+  border: 1px solid var(--sage-grey); border-left: 4px solid var(--burnt-orange);
+  box-shadow: 0 2px 10px rgba(7, 47, 55, 0.18);
+  font: 12.5px/1.35 system-ui, sans-serif;
+}
+.coverage-note[hidden] { display: none; }
+
 /* Quieten the basemap so slope colours carry the map. */
 .leaflet-tile-pane { filter: saturate(0.25) brightness(1.05) contrast(0.92); }
 
@@ -194,6 +219,7 @@ summary { cursor: pointer; font-weight: 600; color: var(--deep-teal); margin-bot
   }
   #handle span { display: block; width: 42px; height: 4px; border-radius: 2px; background: var(--sage-grey); margin: 0 auto; }
   header p { display: none; }
-  header h1 { font-size: 17px; margin-bottom: 8px; }
+  header h1 { font-size: 17px; }
+  .title { margin-bottom: 8px; }
   #panel.min { max-height: 178px; overflow: hidden; }
 }

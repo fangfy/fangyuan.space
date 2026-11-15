@@ -1,4 +1,4 @@
-import { loadElevation } from './elevation.js';
+import { loadElevation, loadCoverage } from './elevation.js';
 import {
   buildGraph, nearestNode, findRoute, summarize, gradeClass, dist, OSM_HIGHWAY_FILTER, STEPS, UNEVEN,
 } from './graph.js';
@@ -21,12 +21,22 @@ const fmtMin = (s) => Math.max(1, Math.round(s / 60)) + ' min';
 
 /* ---------- Map ---------- */
 
-const map = L.map('map', { zoomControl: false }).setView([-42.8826, 147.3257], 15);
+const CITIES = {
+  hobart: { name: 'Hobart', lat: -42.8826, lon: 147.3257, zoom: 15 },
+  canberra: { name: 'Canberra', lat: -35.2809, lon: 149.13, zoom: 15 },
+};
+let startCity = 'hobart';
+try { startCity = CITIES[localStorage.getItem('gentleway-city')] ? localStorage.getItem('gentleway-city') : 'hobart'; } catch (e) { /* ignore */ }
+
+const map = L.map('map', { zoomControl: false })
+  .setView([CITIES[startCity].lat, CITIES[startCity].lon], CITIES[startCity].zoom);
 L.control.zoom({ position: 'topright' }).addTo(map);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   maxZoom: 19,
 }).addTo(map);
+map.createPane('coverage').style.zIndex = 405;
+map.getPane('coverage').style.pointerEvents = 'none';
 map.createPane('slopes').style.zIndex = 410;
 map.createPane('route').style.zIndex = 420;
 const slopeCanvas = L.canvas({ pane: 'slopes', padding: 0.3 });
@@ -47,6 +57,17 @@ const SlopesControl = L.Control.extend({
   },
 });
 map.addControl(new SlopesControl());
+
+const CoverageNote = L.Control.extend({
+  options: { position: 'topright' },
+  onAdd() {
+    const d = L.DomUtil.create('div', 'coverage-note');
+    d.id = 'coverage-note';
+    d.hidden = true;
+    return d;
+  },
+});
+map.addControl(new CoverageNote());
 
 /* ---------- State ---------- */
 
@@ -301,6 +322,10 @@ function renderResult(sg, sd, prefs) {
     ? `<p class="verdict warn">${warnings.join(' ')}</p>`
     : `<p class="verdict">Every stretch is within your limit of ${limitText}.</p>`;
 
+  const approx = sg.coarse > 0.15 * sg.dist
+    ? `<p class="approx">${sg.coarse > 0.85 * sg.dist ? 'This route' : `${fmtDist(sg.coarse)} of this route`} crosses the hatched area, where terrain is only mapped at 30 m. Slopes there are smoothed, so short steep pitches can be steeper than shown.</p>`
+    : '';
+
   const same = Math.abs(sd.dist - sg.dist) <= 10;
   const compare = same
     ? 'This is also the most direct route.'
@@ -337,6 +362,7 @@ function renderResult(sg, sd, prefs) {
   $('result').innerHTML = `
     <div class="headline">${fmtDist(sg.dist)}<span>about ${fmtMin(sg.time)} at an easy pace</span></div>
     ${verdict}
+    ${approx}
     <ul class="stats">
       <li><b>${pct(sg.maxUp)}</b>steepest uphill</li>
       <li><b>${pct(sg.maxDown)}</b>steepest downhill</li>
@@ -511,6 +537,118 @@ map.on('moveend', () => {
   clearTimeout(moveTimer);
   moveTimer = setTimeout(loadSlopesForView, 900);
 });
+
+/* ---------- Terrain coverage shading ---------- */
+
+let cov = null; // { box, w, h, mask, layer }
+let covSeq = 0;
+const COV_N = 128;
+
+function hatchPattern(ctx) {
+  const t = document.createElement('canvas');
+  t.width = 12; t.height = 12;
+  const c = t.getContext('2d');
+  c.fillStyle = 'rgba(101, 129, 109, 0.1)';
+  c.fillRect(0, 0, 12, 12);
+  c.strokeStyle = 'rgba(7, 47, 55, 0.17)';
+  c.lineWidth = 1.5;
+  c.beginPath();
+  c.moveTo(-3, 3); c.lineTo(3, -3);
+  c.moveTo(0, 12); c.lineTo(12, 0);
+  c.moveTo(9, 15); c.lineTo(15, 9);
+  c.stroke();
+  return ctx.createPattern(t, 'repeat');
+}
+
+function coverageNote() {
+  const el = $('coverage-note');
+  if (!cov || map.getZoom() < 10) { el.hidden = true; return; }
+  // Share of the current view that only has approximate terrain.
+  const b = map.getBounds();
+  let hit = 0;
+  let total = 0;
+  for (let j = 0; j < cov.h; j++) {
+    const lat = cov.box.n - ((j + 0.5) / cov.h) * (cov.box.n - cov.box.s);
+    if (lat < b.getSouth() || lat > b.getNorth()) continue;
+    for (let i = 0; i < cov.w; i++) {
+      const lon = cov.box.w + ((i + 0.5) / cov.w) * (cov.box.e - cov.box.w);
+      if (lon < b.getWest() || lon > b.getEast()) continue;
+      total++;
+      hit += cov.mask[j * cov.w + i];
+    }
+  }
+  const share = total ? hit / total : 0;
+  el.hidden = share < 0.01;
+  el.textContent = share > 0.9
+    ? 'Approximate terrain here (30 m data)'
+    : 'Hatched: approximate terrain (30 m). Clear: detailed 5 m terrain.';
+}
+
+async function updateCoverage() {
+  const b = map.getBounds();
+  const view = { s: b.getSouth(), w: b.getWest(), n: b.getNorth(), e: b.getEast() };
+  if (map.getZoom() < 10) {
+    if (cov && cov.layer) map.removeLayer(cov.layer);
+    cov = null;
+    coverageNote();
+    return;
+  }
+  if (cov && contains(cov.box, view) && cov.box.e - cov.box.w < 4 * (view.e - view.w)) {
+    coverageNote();
+    return;
+  }
+  const id = ++covSeq;
+  const mx = (view.e - view.w) * 0.6;
+  const my = (view.n - view.s) * 0.6;
+  const box = { s: view.s - my, w: view.w - mx, n: view.n + my, e: view.e + mx };
+  let grid;
+  try { grid = await loadCoverage(box, COV_N); } catch (e) { return; }
+  if (id !== covSeq) return;
+  const px = 14;
+  const canvas = document.createElement('canvas');
+  canvas.width = grid.w * px;
+  canvas.height = grid.h * px;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = hatchPattern(ctx);
+  let any = false;
+  for (let j = 0; j < grid.h; j++) {
+    for (let i = 0; i < grid.w; i++) {
+      if (grid.mask[j * grid.w + i]) { ctx.fillRect(i * px, j * px, px, px); any = true; }
+    }
+  }
+  if (cov && cov.layer) map.removeLayer(cov.layer);
+  const layer = any
+    ? L.imageOverlay(canvas.toDataURL(), [[box.s, box.w], [box.n, box.e]], { pane: 'coverage', interactive: false }).addTo(map)
+    : null;
+  cov = { box, w: grid.w, h: grid.h, mask: grid.mask, layer };
+  coverageNote();
+}
+
+let covTimer = null;
+map.on('moveend', () => {
+  clearTimeout(covTimer);
+  covTimer = setTimeout(updateCoverage, 400);
+});
+updateCoverage();
+
+/* ---------- Cities ---------- */
+
+function markCity() {
+  const c = map.getCenter();
+  for (const btn of document.querySelectorAll('.cities button')) {
+    const city = CITIES[btn.dataset.city];
+    btn.classList.toggle('on', dist(c.lat, c.lng, city.lat, city.lon) < 25000);
+  }
+}
+for (const btn of document.querySelectorAll('.cities button')) {
+  btn.addEventListener('click', () => {
+    const city = CITIES[btn.dataset.city];
+    try { localStorage.setItem('gentleway-city', btn.dataset.city); } catch (e) { /* ignore */ }
+    map.setView([city.lat, city.lon], city.zoom);
+  });
+}
+map.on('moveend', markCity);
+markCity();
 
 /* ---------- Choosing points ---------- */
 

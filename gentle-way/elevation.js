@@ -1,8 +1,18 @@
 // Elevation sources.
-// 1. Geoscience Australia 5 m LiDAR DEM (WCS, GeoTIFF float32) — used anywhere in Australia it has coverage.
-// 2. Terrarium terrain tiles (global, ~30 m SRTM in most places) — fallback and rest of world.
+// 1. Geoscience Australia 5 m LiDAR DEM (WCS, GeoTIFF float32), wherever it has a survey.
+// 2. Geoscience Australia 1-second (30 m) national DEM, vegetation removed, for the rest of Australia.
+// 3. Terrarium terrain tiles (global, ~30 m SRTM in most places) for the rest of the world.
 
-const GA_WCS = 'https://services.ga.gov.au/gis/services/DEM_LiDAR_5m_2025/MapServer/WCSServer';
+const LIDAR = {
+  name: 'GA LiDAR 5 m',
+  url: 'https://services.ga.gov.au/gis/services/DEM_LiDAR_5m_2025/MapServer/WCSServer',
+  crs: 'EPSG:4283', dx: 5.5063478e-5, dy: 5.1601233e-5, zeroIsGap: true,
+};
+const DEM1S = {
+  name: 'GA national 30 m',
+  url: 'https://services.ga.gov.au/gis/services/DEM_SRTM_1Second_2024/MapServer/WCSServer',
+  crs: 'EPSG:4326', dx: 2.7777778e-4, dy: 2.7777778e-4, zeroIsGap: false,
+};
 const TERRARIUM = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium';
 
 // Minimal reader for uncompressed 32-bit float GeoTIFFs (tiled or stripped).
@@ -94,20 +104,28 @@ function gridSampler(data, w, h, toXY) {
   };
 }
 
-async function loadGA(b) {
-  const DX = 5.5063478e-5;
-  const DY = 5.1601233e-5;
-  let w = Math.ceil((b.e - b.w) / DX);
-  let h = Math.ceil((b.n - b.s) / DY);
-  const k = Math.max(1, w / 2400, h / 2400);
-  w = Math.round(w / k);
-  h = Math.round(h / k);
-  const url = `${GA_WCS}?service=WCS&request=GetCoverage&version=1.0.0&coverage=1&CRS=EPSG:4283`
+const inAustralia = (b) => b.w > 112 && b.e < 154.5 && b.s > -44.5 && b.n < -9;
+
+// One GeoTIFF grid from a Geoscience Australia WCS. Returns null where the service has nothing.
+async function fetchGrid(svc, b, w, h) {
+  const url = `${svc.url}?service=WCS&request=GetCoverage&version=1.0.0&coverage=1&CRS=${svc.crs}`
     + `&BBOX=${b.w},${b.s},${b.e},${b.n}&WIDTH=${w}&HEIGHT=${h}&FORMAT=GeoTIFF`;
   const r = await fetch(url);
-  if (!r.ok) throw new Error('GA elevation HTTP ' + r.status);
-  if (!(r.headers.get('content-type') || '').includes('tif')) throw new Error('GA elevation: no coverage');
-  const t = parseFloatTiff(await r.arrayBuffer());
+  if (!r.ok) throw new Error(svc.name + ' HTTP ' + r.status);
+  if (!(r.headers.get('content-type') || '').includes('tif')) throw new Error(svc.name + ': unexpected reply');
+  const buf = await r.arrayBuffer();
+  if (buf.byteLength < 2000) return null; // an empty stub: no coverage anywhere in the box
+  return parseFloatTiff(buf);
+}
+
+async function loadWcs(svc, b) {
+  let w = Math.ceil((b.e - b.w) / svc.dx);
+  let h = Math.ceil((b.n - b.s) / svc.dy);
+  const k = Math.max(1, w / 2400, h / 2400);
+  w = Math.max(2, Math.round(w / k));
+  h = Math.max(2, Math.round(h / k));
+  const t = await fetchGrid(svc, b, w, h);
+  if (!t) throw new Error(svc.name + ': no coverage here');
   const sx = t.scale ? t.scale[0] : (b.e - b.w) / t.w;
   const sy = t.scale ? t.scale[1] : (b.n - b.s) / t.h;
   const lon0 = t.tie ? t.tie[3] : b.w;
@@ -117,15 +135,35 @@ async function loadGA(b) {
   let max = -Infinity;
   for (let i = 0; i < t.data.length; i++) {
     const v = t.data[i];
-    if (!(v > -200 && v < 9000)) { t.data[i] = NaN; bad++; continue; }
+    // The LiDAR mosaic writes exactly 0 where it has no survey (and over water).
+    if (!(v > -200 && v < 9000) || (svc.zeroIsGap && v === 0)) { t.data[i] = NaN; bad++; continue; }
     if (v < min) min = v;
     if (v > max) max = v;
   }
-  if (bad === t.data.length || max - min < 0.01) throw new Error('GA elevation: no coverage here');
+  if (bad === t.data.length || max - min < 0.01) throw new Error(svc.name + ': no coverage here');
   return {
     sample: gridSampler(t.data, t.w, t.h, (lat, lon) => [(lon - lon0) / sx - 0.5, (lat0 - lat) / sy - 0.5]),
     gaps: bad / t.data.length,
   };
+}
+
+// Where is detailed (LiDAR) terrain missing on land? Coarse grid for shading the map.
+// Returns {w, h, mask} with mask[row * w + col] = 1 for "approximate terrain only", row 0 at the north.
+export async function loadCoverage(b, n) {
+  if (!inAustralia(b)) return { w: 1, h: 1, mask: new Uint8Array([1]) };
+  const [lidar, land] = await Promise.all([
+    fetchGrid(LIDAR, b, n, n).catch(() => null),
+    fetchGrid(DEM1S, b, n, n).catch(() => null),
+  ]);
+  const mask = new Uint8Array(n * n);
+  for (let i = 0; i < n * n; i++) {
+    const z = lidar && lidar.w === n && lidar.h === n ? lidar.data[i] : 0;
+    const hasLidar = z > -200 && z < 9000 && z !== 0;
+    const g = land && land.w === n && land.h === n ? land.data[i] : 100;
+    const isLand = g > 1 && g < 9000;
+    mask[i] = !hasLidar && isLand ? 1 : 0;
+  }
+  return { w: n, h: n, mask };
 }
 
 const lon2x = (lon, z) => ((lon + 180) / 360) * 2 ** z;
@@ -180,35 +218,42 @@ async function loadTerrarium(b) {
   };
 }
 
-// b = {s, w, n, e}. Returns {sample(lat, lon) -> metres, source, label, res}.
+// b = {s, w, n, e}. Returns {sample(lat, lon) -> metres, detailed(lat, lon) -> bool, label, res}.
 export async function loadElevation(b) {
-  const inAustralia = b.w > 112 && b.e < 154.5 && b.s > -44.5 && b.n < -9;
-  if (inAustralia) {
-    try {
-      const ga = await loadGA(b);
-      let fallback = null;
-      // LiDAR has holes over water (wharves, bridges): fill them from the global model.
-      if (ga.gaps > 0.001) {
-        try { fallback = await loadTerrarium(b); } catch (e) { /* keep gaps */ }
+  if (inAustralia(b)) {
+    let lidar = null;
+    let coarse = null;
+    try { lidar = await loadWcs(LIDAR, b); } catch (e) { console.info(e.message); }
+    let coarseName = 'Geoscience Australia 30 m national model';
+    if (!lidar || lidar.gaps > 0.001) {
+      // No survey, or holes in it (water, edge of a survey): use the national 30 m model there.
+      try {
+        coarse = await loadWcs(DEM1S, b);
+      } catch (e) {
+        console.info(e.message);
+        try { coarse = await loadTerrarium(b); coarseName = 'global 30 m terrain'; } catch (e2) { /* none */ }
       }
+    }
+    if (lidar || coarse) {
+      const mostlyLidar = lidar && lidar.gaps < 0.5;
       return {
-        source: 'lidar5',
-        label: 'Geoscience Australia 5 m LiDAR',
-        res: 5,
+        res: mostlyLidar ? 5 : 30,
+        label: lidar
+          ? 'Geoscience Australia 5 m LiDAR' + (coarse ? `, with the ${coarseName.replace('Geoscience Australia ', '')} where LiDAR is missing` : '')
+          : `${coarseName} (no LiDAR survey here, so slopes are approximate)`,
         sample: (lat, lon) => {
-          const v = ga.sample(lat, lon);
-          return Number.isNaN(v) && fallback ? fallback.sample(lat, lon) : v;
+          const v = lidar ? lidar.sample(lat, lon) : NaN;
+          return Number.isNaN(v) && coarse ? coarse.sample(lat, lon) : v;
         },
+        detailed: (lat, lon) => (lidar ? !Number.isNaN(lidar.sample(lat, lon)) : false),
       };
-    } catch (e) {
-      console.warn(e);
     }
   }
   const t = await loadTerrarium(b);
   return {
-    source: 'srtm30',
-    label: 'global 30 m terrain (coarser, so slopes are approximate)',
     res: 30,
+    label: 'global 30 m terrain (coarser, so slopes are approximate)',
     sample: t.sample,
+    detailed: () => false,
   };
 }

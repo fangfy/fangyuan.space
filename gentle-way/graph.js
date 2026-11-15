@@ -4,6 +4,7 @@ export const STEPS = 1;
 export const UNEVEN = 2;
 export const BUSY = 4;
 export const NODATA = 8;
+export const COARSE = 16; // slope taken from 30 m terrain rather than LiDAR
 
 const RAD = Math.PI / 180;
 const EARTH = 6371000;
@@ -120,12 +121,14 @@ export function buildGraph(elements, elev) {
     const S = new Array(n);
     const Z = new Array(n);
     const gap = new Array(n).fill(false);
+    const coarse = new Array(n).fill(false);
     let lastGood = NaN;
     S[0] = 0;
     for (let k = 0; k < n; k++) {
       if (k > 0) S[k] = S[k - 1] + dist(lat[idx[k - 1]], lon[idx[k - 1]], lat[idx[k]], lon[idx[k]]);
       Z[k] = elev.sample(lat[idx[k]], lon[idx[k]]);
       if (Number.isNaN(Z[k])) { gap[k] = true; Z[k] = lastGood; } else lastGood = Z[k];
+      coarse[k] = !elev.detailed(lat[idx[k]], lon[idx[k]]);
     }
     // Streets can run past the edge of the terrain we loaded: carry the nearest known height
     // into the gap (so it reads as flat) and mark those pieces as having no data.
@@ -155,7 +158,8 @@ export function buildGraph(elements, elev) {
       const a = idx[k];
       const b = idx[k + 1];
       if (a === b || len <= 0) continue;
-      const f = gap[k] || gap[k + 1] ? flags | NODATA : flags;
+      let f = gap[k] || gap[k + 1] ? flags | NODATA : flags;
+      if (coarse[k] || coarse[k + 1]) f |= COARSE;
       adj[a].push({ to: b, len, g, f, w });
       adj[b].push({ to: a, len, g: -g, f, w });
     }
@@ -335,7 +339,7 @@ export function gradeClass(g, f) {
 export function summarize(G, steps, src, prefs) {
   const out = {
     dist: 0, time: 0, climb: 0, descent: 0, maxUp: 0, maxDown: 0,
-    over: 0, stepsLen: 0, unevenLen: 0, noData: 0,
+    over: 0, stepsLen: 0, unevenLen: 0, noData: 0, coarse: 0,
     worst: null, profile: [], legs: [],
   };
   let z = G.elev.sample(G.lat[src], G.lon[src]);
@@ -364,6 +368,7 @@ export function summarize(G, steps, src, prefs) {
     if (dz > 0) out.climb += dz; else out.descent -= dz;
     if (e.f & UNEVEN) out.unevenLen += e.len;
     if (e.f & NODATA) out.noData += e.len;
+    else if (e.f & COARSE) out.coarse += e.len;
     z += dz;
     out.profile.push({ d: out.dist, z, lat: G.lat[e.to], lon: G.lon[e.to], g: e.g, c: gradeClass(e.g, e.f) });
 
