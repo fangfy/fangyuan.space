@@ -228,8 +228,39 @@ async function ensureGraph(box) {
 
 /* ---------- Routing ---------- */
 
+// Keep the address bar in step with the chosen points, so the page URL can be shared.
+function writeHash() {
+  const parts = [];
+  for (const [k, key] of [['a', 'from'], ['b', 'to']]) {
+    if (pts[k]) parts.push(`${key}=${pts[k].lat.toFixed(5)},${pts[k].lon.toFixed(5)},${encodeURIComponent(pts[k].label)}`);
+  }
+  const q = parts.join('&');
+  history.replaceState(null, '', q ? '#' + q : location.pathname + location.search);
+}
+
+function readHash() {
+  const p = new URLSearchParams(location.hash.slice(1));
+  let found = 0;
+  for (const [k, key] of [['a', 'from'], ['b', 'to']]) {
+    const v = p.get(key);
+    if (!v) continue;
+    const [lat, lon, ...rest] = v.split(',');
+    const la = Number(lat);
+    const lo = Number(lon);
+    if (!(Math.abs(la) <= 90 && Math.abs(lo) <= 180) || lat === '' || lon === '') continue;
+    setPoint(k, la, lo, rest.join(',').slice(0, 80) || 'Pin on map', true);
+    found++;
+  }
+  if (found === 1) {
+    const one = pts.a || pts.b;
+    map.setView([one.lat, one.lon], 16);
+  }
+  if (found) go();
+}
+
 async function go(refit = true) {
   const id = ++runId;
+  writeHash();
   if (!pts.a || !pts.b) {
     $('result').innerHTML = '';
     routeLayer.clearLayers();
@@ -370,10 +401,21 @@ function renderResult(sg, sd, prefs) {
       <li><b>${Math.round(sg.descent)} m</b>total descent</li>
     </ul>
     <p class="compare">${compare}</p>
+    <button id="share" class="share" type="button">Copy link to this route</button>
     <div class="profile">${profileSvg(sg)}</div>
     <p class="readout" id="readout">Slide along the profile to find each slope on the map.</p>
     <details><summary>Street by street (${legs.length})</summary><ul class="legs">${legRows}</ul></details>`;
   wireProfile(sg);
+  $('share').addEventListener('click', async () => {
+    const btn = $('share');
+    try {
+      await navigator.clipboard.writeText(location.href);
+      btn.textContent = 'Link copied';
+    } catch (e) {
+      prompt('Copy this link:', location.href);
+    }
+    setTimeout(() => { btn.textContent = 'Copy link to this route'; }, 2500);
+  });
   $('panel').classList.remove('min');
 }
 
@@ -818,6 +860,8 @@ $('locate').addEventListener('click', () => {
 });
 
 $('handle').addEventListener('click', () => $('panel').classList.toggle('min'));
+
+readHash();
 
 // Handy from the browser console: gentleWay.setPoint('a', lat, lon, 'label')
 window.gentleWay = { map, setPoint, toggleSlopes, graph: () => G };

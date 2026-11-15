@@ -119,6 +119,12 @@ header p { margin: 2px 0 12px; color: var(--forest-green); font-size: 13.5px; }
   font-size: 13.5px; color: var(--forest-green);
 }
 
+.share {
+  font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
+  margin: 0 0 12px; padding: 7px 12px; border-radius: 8px;
+  border: 1px solid var(--sage-grey); background: var(--white); color: var(--deep-teal);
+}
+.share:hover { background: var(--sage-wash); }
 .profile { position: relative; margin: 0 0 4px; }
 .profile svg { display: block; width: 100%; height: auto; touch-action: none; }
 .profile text { font-size: 11px; fill: var(--forest-green); }
