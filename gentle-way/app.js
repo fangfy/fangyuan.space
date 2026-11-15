@@ -716,7 +716,6 @@ $('swap').addEventListener('click', () => {
 function wireSearch(inputId, listId, which) {
   const input = $(inputId);
   const list = $(listId);
-  let timer = null;
   let seq = 0;
   let results = [];
   const pick = (r) => {
@@ -727,42 +726,49 @@ function wireSearch(inputId, listId, which) {
     if (!(pts.a && pts.b)) map.setView([lat, lon], Math.max(map.getZoom(), 16));
     input.blur();
   };
-  input.addEventListener('input', () => {
-    clearTimeout(timer);
-    const q = input.value.trim();
-    if (!q) {
-      list.innerHTML = '';
-      if (pts[which]) clearPoint(which);
-      return;
+  // The public Nominatim service doesn't allow search-as-you-type, so look up only on Enter.
+  let searched = '';
+  const search = async (q) => {
+    const my = ++seq;
+    searched = q;
+    list.innerHTML = '<li><small>Searching…</small></li>';
+    const b = map.getBounds().pad(1);
+    const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5'
+      + `&q=${encodeURIComponent(q)}&viewbox=${b.getWest()},${b.getNorth()},${b.getEast()},${b.getSouth()}`;
+    try {
+      const r = await fetch(url, { headers: { Accept: 'application/json' } });
+      const j = await r.json();
+      if (my !== seq) return;
+      results = j;
+      list.innerHTML = j.length
+        ? j.map((x, i) => {
+          const parts = x.display_name.split(',');
+          return `<li data-i="${i}">${esc(parts[0])}<small>${esc(parts.slice(1, 4).join(',').trim())}</small></li>`;
+        }).join('')
+        : '<li><small>No places found</small></li>';
+    } catch (e) {
+      results = [];
+      list.innerHTML = '<li><small>Search is unavailable. Tap the map instead.</small></li>';
     }
-    if (q.length < 3) return;
-    timer = setTimeout(async () => {
-      const my = ++seq;
-      const b = map.getBounds().pad(1);
-      const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5'
-        + `&q=${encodeURIComponent(q)}&viewbox=${b.getWest()},${b.getNorth()},${b.getEast()},${b.getSouth()}`;
-      try {
-        const r = await fetch(url, { headers: { Accept: 'application/json' } });
-        const j = await r.json();
-        if (my !== seq) return;
-        results = j;
-        list.innerHTML = j.length
-          ? j.map((x, i) => {
-            const parts = x.display_name.split(',');
-            return `<li data-i="${i}">${esc(parts[0])}<small>${esc(parts.slice(1, 4).join(',').trim())}</small></li>`;
-          }).join('')
-          : '<li><small>No places found</small></li>';
-      } catch (e) {
-        list.innerHTML = '<li><small>Search is unavailable. Tap the map instead.</small></li>';
-      }
-    }, 450);
+  };
+  input.addEventListener('input', () => {
+    seq++;
+    results = [];
+    searched = '';
+    list.innerHTML = '';
+    if (!input.value.trim() && pts[which]) clearPoint(which);
   });
   list.addEventListener('pointerdown', (ev) => {
     const li = ev.target.closest('li[data-i]');
     if (li) { ev.preventDefault(); pick(results[Number(li.dataset.i)]); }
   });
   input.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Enter' && results.length && list.children.length) { ev.preventDefault(); pick(results[0]); }
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      const q = input.value.trim();
+      if (results.length && searched === q) pick(results[0]); // Enter again takes the top result
+      else if (q.length >= 3) search(q);
+    }
     if (ev.key === 'Escape') list.innerHTML = '';
   });
   input.addEventListener('blur', () => setTimeout(() => { list.innerHTML = ''; }, 200));

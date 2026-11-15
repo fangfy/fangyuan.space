@@ -28,7 +28,7 @@
     <div id="search">
       <div class="field">
         <span class="pin a">A</span>
-        <input id="from" type="search" placeholder="Start: search, or tap the map" autocomplete="off" aria-label="Start">
+        <input id="from" type="search" placeholder="Start: type and press Enter, or tap the map" autocomplete="off" aria-label="Start">
         <button id="locate" type="button" title="Use my location" aria-label="Use my location">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="3.5" fill="currentColor"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="currentColor" stroke-width="2"/></svg>
         </button>
@@ -36,7 +36,7 @@
       </div>
       <div class="field">
         <span class="pin b">B</span>
-        <input id="to" type="search" placeholder="Destination" autocomplete="off" aria-label="Destination">
+        <input id="to" type="search" placeholder="Destination: type and press Enter" autocomplete="off" aria-label="Destination">
         <button id="swap" type="button" title="Swap start and destination" aria-label="Swap start and destination">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M7 4v15m0 0-4-4m4 4 4-4M17 20V5m0 0-4 4m4-4 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
@@ -69,9 +69,15 @@
       <span><i class="cx"></i>approximate terrain</span>
     </div>
 
-    <p class="note">Slopes are measured along each street from terrain data. Kerbs, crossfall and
-      footpath condition aren't captured, so treat the route as a guide. Streets ©
-      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors.
+    <p class="note"><strong>A personal demonstration project, not a commercial service.</strong>
+      Routes are a guide only. Slopes are measured along each street from terrain data; kerbs, crossfall
+      and footpath condition aren't captured, so use your own judgement on the ground.</p>
+    <p class="note">Streets, map and place search ©
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors (ODbL).
+      Australian terrain © Commonwealth of Australia (Geoscience Australia),
+      <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.
+      Terrain elsewhere: Mapzen terrain tiles and their
+      <a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md" target="_blank" rel="noopener">data sources</a>.
       <span id="elev-note"></span></p>
   </section>
 
